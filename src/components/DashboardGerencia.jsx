@@ -33,7 +33,7 @@ export default function DashboardGerencia() {
     const [usuarios, setUsuarios] = useState([]);
     const [editingUser, setEditingUser] = useState(null);
     const [editForm, setEditForm] = useState({ rol: '', sucursal: '' });
-    const SUCURSALES_LIST = ["SAN ANTONIO", "VIÑA DEL MAR", "LA CALERA", "ESPACIO URBANO", "VALPARAISO", "VALPO USADO", "VIÑA USADO", "MELIPILLA", "CONCON"];
+    const SUCURSALES_LIST = ["Todas", "SAN ANTONIO", "VIÑA DEL MAR", "LA CALERA", "ESPACIO URBANO", "VALPARAISO", "VALPO USADO", "VIÑA USADO", "MELIPILLA", "CONCON"];
 
     // State for comment editing
     const [editingCommentId, setEditingCommentId] = useState(null);
@@ -42,7 +42,7 @@ export default function DashboardGerencia() {
     // Fetch Vendedores: Supervisor gets all, Jefe de Venta gets their sucursal only
     useEffect(() => {
         if (!userData) return;
-        const isGlobal = userData.rol === 'Supervisor';
+        const isGlobal = userData.rol === 'Supervisor' || userData.sucursal === 'Todas';
         if (!isGlobal && !userData.sucursal) return;
 
         const q = isGlobal
@@ -62,7 +62,7 @@ export default function DashboardGerencia() {
     // Fetch Minutas: Supervisor gets all globally, Jefe de Venta gets their sucursal only
     useEffect(() => {
         if (!userData) return;
-        const isGlobal = userData.rol === 'Supervisor';
+        const isGlobal = userData.rol === 'Supervisor' || userData.sucursal === 'Todas';
         if (!isGlobal && !userData.sucursal) return;
 
         const buildQuery = () => isGlobal
@@ -108,9 +108,9 @@ export default function DashboardGerencia() {
 
     const startEditing = (user) => {
         setEditingUser(user.id);
-        setEditForm({ 
-            rol: user.rol || 'Vendedor', 
-            sucursal: user.sucursal || SUCURSALES_LIST[0] 
+        setEditForm({
+            rol: user.rol || 'Vendedor',
+            sucursal: user.sucursal || SUCURSALES_LIST[0]
         });
     };
 
@@ -232,7 +232,7 @@ export default function DashboardGerencia() {
                             {userData?.rol === 'Supervisor' ? 'Panel Supervisor' : 'Panel Jefatura'}
                         </h2>
                         <p className="text-sm text-gray-500">
-                            {userData?.rol === 'Supervisor'
+                            {userData?.sucursal === 'Todas'
                                 ? <span className="flex items-center gap-1 text-purple-600 font-semibold">🌐 Acceso Global — Todas las Sucursales</span>
                                 : `Sucursal ${userData?.sucursal}`}
                         </p>
@@ -479,7 +479,7 @@ export default function DashboardGerencia() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div 
+                                                            <div
                                                                 className="group relative cursor-pointer hover:bg-blue-50/50 p-2 rounded transition-colors"
                                                                 onClick={() => {
                                                                     setEditingCommentId(minuta.id);
@@ -608,17 +608,17 @@ export default function DashboardGerencia() {
                                 {usuarios.map(user => {
                                     const isEditing = editingUser === user.id;
                                     const needsSucursal = !user.sucursal && user.rol !== 'Supervisor';
-                                    
+
                                     return (
                                         <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${needsSucursal ? 'bg-amber-50/50' : ''}`}>
                                             <td className="p-4 font-medium text-gray-900">{user.nombre}</td>
                                             <td className="p-4 text-gray-500 text-xs">{user.email}</td>
-                                            
+
                                             <td className="p-4">
                                                 {isEditing ? (
-                                                    <select 
+                                                    <select
                                                         value={editForm.sucursal}
-                                                        onChange={(e) => setEditForm({...editForm, sucursal: e.target.value})}
+                                                        onChange={(e) => setEditForm({ ...editForm, sucursal: e.target.value })}
                                                         className="block w-full text-sm border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 py-1.5"
                                                     >
                                                         {SUCURSALES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
@@ -629,12 +629,12 @@ export default function DashboardGerencia() {
                                                     </span>
                                                 )}
                                             </td>
-                                            
+
                                             <td className="p-4">
                                                 {isEditing ? (
-                                                    <select 
+                                                    <select
                                                         value={editForm.rol}
-                                                        onChange={(e) => setEditForm({...editForm, rol: e.target.value})}
+                                                        onChange={(e) => setEditForm({ ...editForm, rol: e.target.value })}
                                                         className="block w-full text-sm border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 py-1.5"
                                                     >
                                                         <option value="Vendedor">Vendedor</option>
@@ -642,26 +642,25 @@ export default function DashboardGerencia() {
                                                         <option value="Supervisor">Supervisor</option>
                                                     </select>
                                                 ) : (
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-full ${
-                                                        user.rol === 'Supervisor' ? 'bg-purple-100 text-purple-700' :
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-full ${user.rol === 'Supervisor' ? 'bg-purple-100 text-purple-700' :
                                                         user.rol === 'Jefe de Venta' ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-emerald-100 text-emerald-700'
-                                                    }`}>
+                                                            'bg-emerald-100 text-emerald-700'
+                                                        }`}>
                                                         {user.rol} {needsSucursal && <span className="ml-1 text-red-500 animate-pulse" title="Sin sucursal">⚠️</span>}
                                                     </span>
                                                 )}
                                             </td>
-                                            
+
                                             <td className="p-4 text-right">
                                                 {isEditing ? (
                                                     <div className="flex justify-end gap-2">
-                                                        <button 
+                                                        <button
                                                             onClick={() => setEditingUser(null)}
                                                             className="p-1 text-gray-400 hover:text-gray-600"
                                                         >
                                                             <X size={16} />
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={() => saveEditing(user.id)}
                                                             className="p-1 text-purple-600 hover:text-purple-800"
                                                         >
@@ -669,7 +668,7 @@ export default function DashboardGerencia() {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <button 
+                                                    <button
                                                         onClick={() => startEditing(user)}
                                                         className="text-purple-600 hover:underline font-medium text-xs flex items-center gap-1 ml-auto"
                                                     >
