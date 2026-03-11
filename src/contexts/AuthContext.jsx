@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth';
+import { signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, deleteUser } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
@@ -14,37 +14,56 @@ export function AuthProvider({ children }) {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    async function signup(email, password, nombre, sucursal, rol) {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+    const googleProvider = new GoogleAuthProvider();
+    // Optional: force account selection every time
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-        const newUserData = {
-            nombre,
-            email,
-            sucursal,
-            rol
-        };
+    async function loginWithGoogle() {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
 
-        // Create user document in Firestore
-        await setDoc(doc(db, 'usuarios', user.uid), newUserData);
+        // Check domain
+        if (!user.email.endsWith('@suzuval.cl')) {
+            await deleteUser(user).catch(console.error); // try to clean up auth user if created
+            await logout();
+            throw new Error("Acceso denegado. Solo se permiten correos @suzuval.cl.");
+        }
 
-        // Instantly update local state so the redirect works immediately
-        setUserData(newUserData);
+        // Check if user exists in Firestore
+        const docRef = doc(db, 'usuarios', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            const isAdmin = user.email.toLowerCase() === 'gestionyautomatizacion@suzuval.cl';
+            // First time login
+            const newUserData = {
+                nombre: user.displayName || user.email.split('@')[0],
+                email: user.email,
+                rol: isAdmin ? 'Supervisor' : 'Vendedor',
+                sucursal: isAdmin ? 'Todas' : '',
+                fecha_creacion: new Date()
+            };
+            await setDoc(docRef, newUserData);
+            setUserData(newUserData);
+        } else {
+            const data = docSnap.data();
+            // Force admin role and global sucursal if it's the master account
+            if (user.email.toLowerCase() === 'gestionyautomatizacion@suzuval.cl') {
+                if (data.rol !== 'Supervisor' || data.sucursal !== 'Todas') {
+                    data.rol = 'Supervisor';
+                    data.sucursal = 'Todas';
+                    await setDoc(docRef, data, { merge: true });
+                }
+            }
+            setUserData(data);
+        }
+
         setCurrentUser(user);
-
-        return userCredential;
-    }
-
-    function login(email, password) {
-        return signInWithEmailAndPassword(auth, email, password);
+        return result;
     }
 
     function logout() {
         return signOut(auth);
-    }
-
-    function resetPassword(email) {
-        return sendPasswordResetEmail(auth, email);
     }
 
     useEffect(() => {
@@ -79,10 +98,8 @@ export function AuthProvider({ children }) {
         currentUser,
         userData,
         loading,
-        signup,
-        login,
-        logout,
-        resetPassword
+        loginWithGoogle,
+        logout
     };
 
     return (

@@ -1,55 +1,47 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Car, LogIn, UserPlus, CheckCircle } from 'lucide-react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { Car, LogIn } from 'lucide-react';
 
 export default function Login() {
-    const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [nombre, setNombre] = useState('');
-    const [sucursal, setSucursal] = useState('SAN ANTONIO');
-    const [rol, setRol] = useState('Vendedor');
     const [error, setError] = useState('');
-    const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
-
-    const { login, signup, currentUser, loading: authLoading, resetPassword } = useAuth();
+    
+    // We get currentUser and userData to proactively redirect if already logged in
+    const { loginWithGoogle, currentUser, userData, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
-    // Redirect if already logged in
-    React.useEffect(() => {
-        if (!authLoading && currentUser) {
-            navigate('/');
+    // If user is already logged in and we have their data, redirect them
+    if (currentUser && userData) {
+        switch (userData.rol) {
+            case 'Jefe de Venta': return <Navigate to="/jefe-venta" replace />;
+            case 'Supervisor': return <Navigate to="/jefe-venta" replace />;
+            case 'Vendedor': return <Navigate to="/vendedor" replace />;
+            case 'Pendiente': return <Navigate to="/pendiente" replace />;
+            default: return <Navigate to="/login" replace />;
         }
-    }, [currentUser, authLoading, navigate]);
+    }
 
-    const sucursales = ["SAN ANTONIO", "VIÑA DEL MAR", "LA CALERA", "ESPACIO URBANO", "VALPARAISO", "VALPO USADO", "VIÑA USADO", "MELIPILLA", "CONCON"];
-
-    // Solo el usuario gestionyautomatizacion@suzuval.cl puede ver el rol Supervisor
-    const availableRoles = email === 'gestionyautomatizacion@suzuval.cl'
-        ? ["Vendedor", "Jefe de Venta", "Supervisor"]
-        : ["Vendedor", "Jefe de Venta"];
-
-    async function handleSubmit(e) {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
+    async function handleGoogleLogin() {
         try {
-            if (isLogin) {
-                await login(email, password);
-                // Navigation will be handled by AuthContext reading role and ProtectedRoute, but we can do a general redirect
-                navigate('/');
-            } else {
-                await signup(email, password, nombre, sucursal, rol);
-                navigate('/');
-            }
+            setError('');
+            setLoading(true);
+            await loginWithGoogle();
+            // The AuthContext onAuthStateChanged will handle the state update
+            // and the component will re-render and trigger the redirect block above
         } catch (err) {
-            setError(err.message || 'Error de autenticación');
+            setError(err.message || 'Error al iniciar sesión con Google.');
         } finally {
             setLoading(false);
         }
+    }
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-gray-500 font-medium animate-pulse">Cargando...</div>
+            </div>
+        );
     }
 
     return (
@@ -61,119 +53,52 @@ export default function Login() {
                     </div>
                 </div>
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-                    Suzuval
+                    Dashboard de Minuta Semanal
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
-                    Plataforma de Compromisos Semanales
+                <p className="mt-2 text-center text-sm text-gray-600 font-medium">
+                    Suzuval Automotriz
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10 border border-gray-100">
+                    {/* Error Display */}
+                    {error && (
+                        <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                            <p className="text-sm text-red-700 font-medium">{error}</p>
+                        </div>
+                    )}
 
-                    <div className="flex mb-6 border-b border-gray-200">
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-6 font-medium">
+                            Acceso seguro y exclusivo con cuenta corporativa.
+                        </p>
                         <button
-                            className={`flex-1 py-2 text-center font-medium transition-colors duration-200 ${isLogin ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setIsLogin(true)}
+                            onClick={handleGoogleLogin}
+                            disabled={loading}
+                            className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed items-center gap-3"
                         >
-                            Iniciar Sesión
-                        </button>
-                        <button
-                            className={`flex-1 py-2 text-center font-medium transition-colors duration-200 ${!isLogin ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setIsLogin(false)}
-                        >
-                            Registrarse
+                            <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                <path
+                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                    fill="#4285F4"
+                                />
+                                <path
+                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                    fill="#34A853"
+                                />
+                                <path
+                                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                    fill="#FBBC05"
+                                />
+                                <path
+                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                    fill="#EA4335"
+                                />
+                            </svg>
+                            {loading ? 'Conectando...' : 'Entrar con correo @suzuval.cl'}
                         </button>
                     </div>
-
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error && (
-                            <div className="bg-red-50 border-l-4 border-red-400 p-4">
-                                <div className="flex">
-                                    <div className="flex-shrink-0">
-                                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-sm text-red-700">{error}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {message && (
-                            <div className="bg-green-50 border-l-4 border-green-400 p-4">
-                                <div className="flex">
-                                    <div className="flex-shrink-0">
-                                        <CheckCircle className="h-5 w-5 text-green-400" />
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-sm text-green-700">{message}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {!isLogin && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                                <div className="mt-1">
-                                    <input type="text" required value={nombre} onChange={(e) => setNombre(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                                </div>
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-                            <div className="mt-1">
-                                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                            <div className="mt-1">
-                                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                            </div>
-                        </div>
-
-                        {!isLogin && (
-                            <>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Sucursal</label>
-                                    <select value={sucursal} onChange={(e) => setSucursal(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
-                                        {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Rol</label>
-                                    <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
-                                        {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
-                                    </select>
-                                </div>
-                            </>
-                        )}
-
-                        <div>
-                            <button disabled={loading} type="submit" className="w-full flex justify-center py-2 px-4 flex items-center gap-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50">
-                                {isLogin ? <LogIn size={18} /> : <UserPlus size={18} />}
-                                {isLogin ? 'Ingresar' : 'Crear cuenta'}
-                            </button>
-                        </div>
-
-                        {isLogin && (
-                            <div className="text-center">
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-sm text-blue-600 hover:text-blue-500 font-medium"
-                                >
-                                    ¿Olvidaste tu contraseña?
-                                </Link>
-                            </div>
-                        )}
-                    </form>
-
                 </div>
             </div>
         </div>

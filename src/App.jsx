@@ -6,9 +6,6 @@ import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import DashboardGerencia from './components/DashboardGerencia';
 import PortalVendedor from './components/PortalVendedor';
-import DashboardSupervisor from './pages/DashboardSupervisor';
-import ForgotPassword from './pages/ForgotPassword';
-import CrearSupervisor from './pages/CrearSupervisor';
 
 function DashboardRedirect() {
   const { userData, loading } = useAuth();
@@ -46,8 +43,6 @@ function App() {
           <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-fade-in">
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/suzuval-admin-crear" element={<CrearSupervisor />} />
 
               <Route path="/vendedor" element={
                 <ProtectedRoute allowedRoles={['Vendedor']}>
@@ -61,11 +56,7 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              <Route path="/supervisor" element={
-                <ProtectedRoute allowedRoles={['Supervisor']}>
-                  <DashboardSupervisor />
-                </ProtectedRoute>
-              } />
+
 
               {/* Default redirect based on role */}
               <Route path="/" element={

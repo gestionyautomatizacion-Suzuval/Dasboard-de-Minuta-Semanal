@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase
+.firebase
+*-debug.log*
+firebase-debug.log*
+
+# Build and temp
+build_output.txt
+dist
+node_modules

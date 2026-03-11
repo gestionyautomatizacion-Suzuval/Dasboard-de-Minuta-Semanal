@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, orderBy, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, orderBy, setDoc, getDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
 
 const firebaseConfig = {
@@ -15,4 +15,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app, "minuta-suzuval-eevv");
 const auth = getAuth(app);
 
-export { app, db, auth, collection, addDoc, updateDoc, doc, onSnapshot, query, where, orderBy, setDoc, getDoc, serverTimestamp };
+export { app, db, auth, collection, addDoc, updateDoc, doc, onSnapshot, query, where, orderBy, setDoc, getDoc, serverTimestamp, deleteDoc };
